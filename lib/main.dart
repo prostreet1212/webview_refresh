@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:webview_refresh/inappwebview_page.dart';
 import 'package:webview_refresh/webview_page.dart';
+import 'package:webview_refresh/webview_plus_page.dart';
 
 void main() {
   runApp(const MyApp());

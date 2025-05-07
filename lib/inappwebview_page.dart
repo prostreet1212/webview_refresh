@@ -18,6 +18,9 @@ class _InappwebviewPageState extends State<InappwebviewPage>
   late InAppWebViewController? inAppWebViewController = null;
   String inAppWebViewKeyString = Uuid().v4().toString();
   String webViewKeyString = Uuid().v4().toString();
+  final GlobalKey<_InappwebviewPageState> _webViewKey =
+      GlobalKey<_InappwebviewPageState>();
+  bool isCrashed = false;
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _InappwebviewPageState extends State<InappwebviewPage>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       print('app resumed');
+      //await inAppWebViewController!.resume();
     } else if (state == AppLifecycleState.detached) {
       print('app detached');
     } else if (state == AppLifecycleState.hidden) {
@@ -44,6 +48,7 @@ class _InappwebviewPageState extends State<InappwebviewPage>
       print('app inactive');
     } else if (state == AppLifecycleState.paused) {
       print('app paused');
+      //await inAppWebViewController!.pause();
     }
   }
 
@@ -61,12 +66,7 @@ class _InappwebviewPageState extends State<InappwebviewPage>
       child: Scaffold(
         body: NestedScrollView(
           headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-            return [
-              SliverAppBar(
-                collapsedHeight: 56,
-                expandedHeight: 256,
-              ),
-            ];
+            return [SliverAppBar(collapsedHeight: 56, expandedHeight: 256)];
           },
           body: CustomScrollView(
             slivers: [
@@ -83,27 +83,33 @@ class _InappwebviewPageState extends State<InappwebviewPage>
                 },
                 child: InAppWebView(
                   key: ValueKey(webViewKeyString),
+                  // key: _webViewKey,
                   onWebViewCreated: (c) {
                     inAppWebViewController = c;
+                    inAppWebViewController!.loadUrl(
+                      urlRequest: URLRequest(
+                        url: WebUri('https://kdrc.ru/novosti'),
+                      ),
+                    );
                   },
-                  initialUrlRequest: URLRequest(
+                  /* initialUrlRequest: URLRequest(
                     url: WebUri('https://kdrc.ru/novosti'),
+                  ),*/
+                  initialSettings: InAppWebViewSettings(
+                    javaScriptEnabled: true,
+                    useOnRenderProcessGone: true,
                   ),
-                  /*  initialSettings: InAppWebViewSettings(
-            useHybridComposition: true,
-            javaScriptEnabled: true,
-            useOnRenderProcessGone: true,
-          ),
 
-          onRenderProcessGone: (controller, details){
-            setState(() {
-              webViewKeyString = Uuid().v4().toString();
-            });
-            //inAppWebViewController.reload();
-           /* inAppWebViewController.loadUrl(urlRequest: URLRequest(
+                  onRenderProcessGone: (controller, details) {
+                    isCrashed = true;
+                  /*  setState(() {
+                      webViewKeyString = Uuid().v4().toString();
+                    });*/
+                    inAppWebViewController?.scrollTo(x: 0, y: 0);
+                    /* inAppWebViewController.loadUrl(urlRequest: URLRequest(
                 url: WebUri('https://kdrc.ru/novosti')));*/
-            print('рендер ${details.toString()}');
-          },*/
+                    print('рендер ${details.toString()}');
+                  },
                 ),
               ),
             ],

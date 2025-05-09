@@ -34,10 +34,10 @@ class _WebviewPageState extends State<WebviewPage> {
                 onWebResourceError: (error) {
                   print(error.description);
                 },
-                onHttpError: (error) {
+               /* onHttpError: (error) {
                   print(error.response);
-                },
-                onHttpAuthRequest: (a){}
+                },*/
+               /* onHttpAuthRequest: (a){}*/
               ),
             )
             ..loadRequest(Uri.parse('https://kdrc.ru/novosti'));
@@ -60,11 +60,10 @@ class _WebviewPageState extends State<WebviewPage> {
       onWillPop: () async {
         if (await webViewController.canGoBack()) {
           webViewController.goBack();
-          String? s = await webViewController.getUserAgent();
+         /* String? s = await webViewController.getUserAgent();
           webViewController.setUserAgent(
             'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36 Edg/136.0.0.0',
-          );
-          print(s);
+          );*/
           return false;
         } else {
           return true;
@@ -111,11 +110,8 @@ class _WebviewPageState extends State<WebviewPage> {
                             //height:718.5,
                             //height:1252,
                             height: heightWebview,
-                            child: WebViewWidget(
-                              controller:webViewController
-                                /*  isWeb
-                                      ? webViewController
-                                      : WebViewController(),*/
+                            child: WebViewWidget(controller: webViewController,
+
                             ),
                           );
                         },

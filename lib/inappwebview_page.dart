@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:extended_sliver/extended_sliver.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_direct_call_plus/flutter_direct_call.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -14,13 +16,14 @@ class InappwebviewPage extends StatefulWidget {
 }
 
 class _InappwebviewPageState extends State<InappwebviewPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   late InAppWebViewController? inAppWebViewController = null;
   String inAppWebViewKeyString = Uuid().v4().toString();
   String webViewKeyString = Uuid().v4().toString();
   final GlobalKey<_InappwebviewPageState> _webViewKey =
       GlobalKey<_InappwebviewPageState>();
   bool isCrashed = false;
+  late Widget webCopy;
 
   @override
   void initState() {
@@ -40,6 +43,10 @@ class _InappwebviewPageState extends State<InappwebviewPage>
     if (state == AppLifecycleState.resumed) {
       print('app resumed');
       //await inAppWebViewController!.resume();
+      if(isCrashed){
+       // await inAppWebViewController!.reload();
+      //  isCrashed=false;
+      }
     } else if (state == AppLifecycleState.detached) {
       print('app detached');
     } else if (state == AppLifecycleState.hidden) {
@@ -52,8 +59,11 @@ class _InappwebviewPageState extends State<InappwebviewPage>
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return WillPopScope(
       onWillPop: () async {
         if (await inAppWebViewController!.canGoBack()) {
@@ -81,33 +91,66 @@ class _InappwebviewPageState extends State<InappwebviewPage>
                     inAppWebViewController!.scrollTo(x: 0, y: y.ceil());
                   }
                 },
-                child: InAppWebView(
+                child:InAppWebView(
                   key: ValueKey(webViewKeyString),
                   // key: _webViewKey,
                   onWebViewCreated: (c) {
-                    inAppWebViewController = c;
+                      inAppWebViewController = c;
                     inAppWebViewController!.loadUrl(
                       urlRequest: URLRequest(
+                        // url: WebUri('https://kdrc.ru/novosti'),
                         url: WebUri('https://kdrc.ru/novosti'),
                       ),
                     );
+                    inAppWebViewController!.addJavaScriptHandler(handlerName: 'onContentHeightChanged', callback:  (args) {
+                      final height = args[0] as int;
+                      print('Высота контента: $height');
+                      // Можно обновить UI
+                    },);
                   },
                   /* initialUrlRequest: URLRequest(
                     url: WebUri('https://kdrc.ru/novosti'),
                   ),*/
-                  initialSettings: InAppWebViewSettings(
+                  /* initialSettings: InAppWebViewSettings(
                     javaScriptEnabled: true,
                     useOnRenderProcessGone: true,
-                  ),
+                    useWideViewPort: false,
+                    useShouldInterceptAjaxRequest: true,
+                    useShouldInterceptFetchRequest: true,
+                    useShouldInterceptRequest: true,
+                    useShouldOverrideUrlLoading: true,
+                    useOnNavigationResponse: true,
+                    useOnLoadResource: true,
 
+                  ),*/
+                  onLoadStop: (c, uri) {
+                    inAppWebViewController!.evaluateJavascript(
+                      source: '''     (function() {
+          var height = 0;
+          function checkAndNotify() {
+            var curr = document.body.scrollHeight;
+            if (curr !== height) {
+              height = curr;
+              window.flutter_inappwebview.callHandler('onContentHeightChanged', height);
+            }
+          }
+          if (window.ResizeObserver) {
+            new ResizeObserver(checkAndNotify).observe(document.body);
+          } else {
+            setInterval(checkAndNotify, 200);
+          }
+        })(); ''',
+                    );
+                  },
                   onRenderProcessGone: (controller, details) {
-                    isCrashed = true;
-                  /*  setState(() {
+                    setState(() {
+                      isCrashed = true;
+                    });
+                    setState(() {
                       webViewKeyString = Uuid().v4().toString();
-                    });*/
-                    inAppWebViewController?.scrollTo(x: 0, y: 0);
-                    /* inAppWebViewController.loadUrl(urlRequest: URLRequest(
-                url: WebUri('https://kdrc.ru/novosti')));*/
+                    });
+                    //inAppWebViewController?.reload();
+                    isCrashed=true;
                     print('рендер ${details.toString()}');
                   },
                 ),
@@ -116,11 +159,24 @@ class _InappwebviewPageState extends State<InappwebviewPage>
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            inAppWebViewController!.reload();
+          onPressed: () async{
+            //inAppWebViewController!.reload();
+            final status1 = await Permission.phone.request();
+            if(status1.isGranted){
+              await FlutterDirectCall.makeDirectCall("+79210779641");
+            }
           },
         ),
       ),
     );
+  }
+
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
+
+  @override
+  void deactivate() {
+    //
   }
 }

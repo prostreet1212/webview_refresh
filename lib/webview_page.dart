@@ -1,10 +1,13 @@
 import 'dart:io';
 
 import 'package:extended_sliver/extended_sliver.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nested_scroll_controller/nested_scroll_controller.dart';
 import 'package:nested_scroll_view_plus/nested_scroll_view_plus.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class WebviewPage extends StatefulWidget {
@@ -17,7 +20,27 @@ class WebviewPage extends StatefulWidget {
 class _WebviewPageState extends State<WebviewPage> {
   late final WebViewController webViewController;
   bool isWeb = false;
-  static const platform = MethodChannel('com.example/webview');
+  static var httpClient =  HttpClient();
+
+  Future<File?> _downloadFile(String url, String filename,  ) async {
+    try {
+      var request = await httpClient.getUrl(Uri.parse(url));
+      var response = await request.close();
+      var bytes = await consolidateHttpClientResponseBytes(response);
+      //String dir = (await getApplicationDocumentsDirectory()).path;
+      String dir = (await getDownloadsDirectory())!.path;
+      File file =  File('$dir/$filename');
+      await file.writeAsBytes(bytes);
+      return file;
+    } catch (e) {
+      if(context.mounted){
+        Navigator.pop(context);
+      }
+
+      return null;
+      //throw Exception(e);
+    }
+  }
 
 
   @override
@@ -29,6 +52,18 @@ class _WebviewPageState extends State<WebviewPage> {
           WebViewController()
             ..setNavigationDelegate(
               NavigationDelegate(
+                onNavigationRequest: (request)async{
+                  if(request.url.contains('.doc')){
+                    File? file = await _downloadFile(
+                        request.url, 'file.docx');
+                    if (file != null) {
+                      OpenFilex.open(file.path);
+                    }
+                    return NavigationDecision.prevent;
+                  }else{
+                    return NavigationDecision.navigate;
+                  }
+                },
                 onPageFinished: (url){
                 },
                 onWebResourceError: (error) {
@@ -39,7 +74,7 @@ class _WebviewPageState extends State<WebviewPage> {
                 },*/
                /* onHttpAuthRequest: (a){}*/
               ),
-            )
+            )..setJavaScriptMode(JavaScriptMode.unrestricted)
             ..loadRequest(Uri.parse('https://kdrc.ru/novosti'));
     } catch (e) {
       print('error');

@@ -115,6 +115,10 @@ class _InappwebviewPageState extends State<InappwebviewPage>
                   /* initialUrlRequest: URLRequest(
                     url: WebUri('https://kdrc.ru/novosti'),
                   ),*/
+                  onDownloadStartRequest:(c,r){
+
+                  },
+
                    initialSettings: InAppWebViewSettings(
                     useOnRenderProcessGone: true,
                      rendererPriorityPolicy: RendererPriorityPolicy(rendererRequestedPriority: RendererPriority.RENDERER_PRIORITY_BOUND,waivedWhenNotVisible: false)

@@ -17,13 +17,18 @@ class InappwebviewPage extends StatefulWidget {
 
 class _InappwebviewPageState extends State<InappwebviewPage>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
-  late InAppWebViewController? inAppWebViewController = null;
+  late InAppWebViewController? _inAppWebViewController = null;
+  InAppWebViewController? get inAppWebViewController => _inAppWebViewController;
+  //set inAppWebViewController1(InAppWebViewController c) => _inAppWebViewController = c;
+
+
   String inAppWebViewKeyString = Uuid().v4().toString();
   String webViewKeyString = Uuid().v4().toString();
   final GlobalKey<_InappwebviewPageState> _webViewKey =
       GlobalKey<_InappwebviewPageState>();
   bool isCrashed = false;
   late Widget webCopy;
+
 
   @override
   void initState() {
@@ -42,11 +47,7 @@ class _InappwebviewPageState extends State<InappwebviewPage>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       print('app resumed');
-      //await inAppWebViewController!.resume();
-      if(isCrashed){
-       // await inAppWebViewController!.reload();
-      //  isCrashed=false;
-      }
+
     } else if (state == AppLifecycleState.detached) {
       print('app detached');
     } else if (state == AppLifecycleState.hidden) {
@@ -94,8 +95,11 @@ class _InappwebviewPageState extends State<InappwebviewPage>
                 child:InAppWebView(
                   key: ValueKey(webViewKeyString),
                   // key: _webViewKey,
+                  onPageCommitVisible: (c,uri){
+
+                  },
                   onWebViewCreated: (c) {
-                      inAppWebViewController = c;
+                      _inAppWebViewController = c;
                     inAppWebViewController!.loadUrl(
                       urlRequest: URLRequest(
                         // url: WebUri('https://kdrc.ru/novosti'),
@@ -111,18 +115,10 @@ class _InappwebviewPageState extends State<InappwebviewPage>
                   /* initialUrlRequest: URLRequest(
                     url: WebUri('https://kdrc.ru/novosti'),
                   ),*/
-                  /* initialSettings: InAppWebViewSettings(
-                    javaScriptEnabled: true,
+                   initialSettings: InAppWebViewSettings(
                     useOnRenderProcessGone: true,
-                    useWideViewPort: false,
-                    useShouldInterceptAjaxRequest: true,
-                    useShouldInterceptFetchRequest: true,
-                    useShouldInterceptRequest: true,
-                    useShouldOverrideUrlLoading: true,
-                    useOnNavigationResponse: true,
-                    useOnLoadResource: true,
-
-                  ),*/
+                     rendererPriorityPolicy: RendererPriorityPolicy(rendererRequestedPriority: RendererPriority.RENDERER_PRIORITY_BOUND,waivedWhenNotVisible: false)
+                  ),
                   onLoadStop: (c, uri) {
                     inAppWebViewController!.evaluateJavascript(
                       source: '''     (function() {
@@ -142,16 +138,24 @@ class _InappwebviewPageState extends State<InappwebviewPage>
         })(); ''',
                     );
                   },
-                  onRenderProcessGone: (controller, details) {
-                    setState(() {
-                      isCrashed = true;
-                    });
-                    setState(() {
+                 // onRenderProcessResponsive: (c,uri){},
+                  onRenderProcessGone: (controller, details)async {
+                   /* setState(() {
                       webViewKeyString = Uuid().v4().toString();
-                    });
-                    //inAppWebViewController?.reload();
-                    isCrashed=true;
+                    });*/
+                    //InAppWebViewController.clearAllCache();
+                    await inAppWebViewController?.reload();
+                    //await inAppWebViewController!.scrollTo(x: 0, y: 200);
                     print('рендер ${details.toString()}');
+                  },
+                  onWindowBlur: (c){},
+                  onRenderProcessResponsive: (c,u)async{
+                     print('onRenderProcessResponsive...');
+                     return await WebViewRenderProcessAction.TERMINATE;
+                  },
+                  onRenderProcessUnresponsive:(c,u)async{
+                    print('onRenderProcessUnresponsive...');
+                    return await WebViewRenderProcessAction.fromValue(1);
                   },
                 ),
               ),
@@ -175,8 +179,4 @@ class _InappwebviewPageState extends State<InappwebviewPage>
   // TODO: implement wantKeepAlive
   bool get wantKeepAlive => true;
 
-  @override
-  void deactivate() {
-    //
-  }
 }

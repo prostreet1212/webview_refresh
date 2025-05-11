@@ -3,7 +3,9 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:webview_refresh/inappwebview_page.dart';
 import 'package:webview_refresh/webview_page.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await InAppWebViewController.setWebContentsDebuggingEnabled(true);
   runApp(const MyApp());
 }
 

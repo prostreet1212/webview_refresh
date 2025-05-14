@@ -22,6 +22,27 @@ class _WebviewPageState extends State<WebviewPage> {
   bool isWeb = false;
   static var httpClient =  HttpClient();
 
+   String kTransparentBackgroundPage = '''
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>Transparent background test</title>
+  </head>
+  <style type="text/css">
+    body { background: transparent; margin: 0; padding: 0; }
+    #container { position: relative; margin: 0; padding: 0; width: 100vw; height: 100vh; }
+    #shape { background: red; width: 200px; height: 200px; margin: 0; padding: 0; position: absolute; top: calc(50% - 100px); left: calc(50% - 100px); }
+    p { text-align: center; }
+  </style>
+  <body>
+    <div id="container">
+      <p>Transparent background test</p>
+      <div id="shape"></div>
+    </div>
+  </body>
+  </html>
+''';
+
   Future<File?> _downloadFile(String url, String filename,  ) async {
     try {
       var request = await httpClient.getUrl(Uri.parse(url));
@@ -67,15 +88,26 @@ class _WebviewPageState extends State<WebviewPage> {
                 onPageFinished: (url){
                 },
                 onWebResourceError: (error) {
-                  print(error.description);
+                  print('aaa');
                 },
+                onHttpError: (e){
+                  print('aaa');
+                },
+                onHttpAuthRequest: (a){
+                  print('aaa');
+                }
                /* onHttpError: (error) {
                   print(error.response);
                 },*/
                /* onHttpAuthRequest: (a){}*/
               ),
             )..setJavaScriptMode(JavaScriptMode.unrestricted)
-            ..loadRequest(Uri.parse('https://kdrc.ru/novosti'));
+            ..setOnConsoleMessage((e){
+              print('aaa');
+            })
+           // ..loadRequest(Uri.parse('https://kdrc.ru/novosti'),method: LoadRequestMethod.post)
+      ..loadHtmlString(kTransparentBackgroundPage)
+      ;
     } catch (e) {
       print('error');
     }
@@ -105,68 +137,66 @@ class _WebviewPageState extends State<WebviewPage> {
         }
       },
       child: SafeArea(
-        child: Scaffold(
-          body: NestedScrollViewPlus(
-            controller: nestedScrollController,
-            physics: ClampingScrollPhysics(),
-            //  pushPinnedHeaderSlivers: true,
-            headerSliverBuilder: (
-              BuildContext context,
-              bool innerBoxIsScrolled,
-            ) {
-              return [
-                //  NestedScrollView(headerSliverBuilder: headerSliverBuilder, body: body),
-                SliverAppBar(collapsedHeight: 56, expandedHeight: 256),
-              ];
-            },
-            body: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                nestedScrollController.enableScroll(context);
-                nestedScrollController.enableCenterScroll(constraints);
-                return CustomScrollView(
-                  slivers: [
-                    SliverToNestedScrollBoxAdapter(
-                      childExtent: 1491,
-                      onScrollOffsetChanged: (scrollOffset) {
-                        double y = scrollOffset;
-                        if (Platform.isAndroid) {
-                          y *= View.of(context).devicePixelRatio;
-                        }
-                        if (webViewController != null) {
-                          webViewController!.scrollTo(0, y.ceil());
-                        }
-                      },
-                      child: ListView.builder(
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: 1,
-                        itemBuilder: (c, i) {
-                          return SizedBox(
-                            //width: 500,
-                            //height:718.5,
-                            //height:1252,
-                            height: heightWebview,
-                            child: WebViewWidget(controller: webViewController,
-
-                            ),
-                          );
+          child: Scaffold(
+            body: NestedScrollViewPlus(
+              controller: nestedScrollController,
+              physics: ClampingScrollPhysics(),
+              //  pushPinnedHeaderSlivers: true,
+              headerSliverBuilder: (
+                  BuildContext context,
+                  bool innerBoxIsScrolled,
+                  ) {
+                return [
+                  //  NestedScrollView(headerSliverBuilder: headerSliverBuilder, body: body),
+                  SliverAppBar(collapsedHeight: 56, expandedHeight: 256),
+                ];
+              },
+              body: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  nestedScrollController.enableScroll(context);
+                  nestedScrollController.enableCenterScroll(constraints);
+                  return CustomScrollView(
+                    slivers: [
+                      SliverToNestedScrollBoxAdapter(
+                        childExtent: 1491,
+                        onScrollOffsetChanged: (scrollOffset) {
+                          double y = scrollOffset;
+                          if (Platform.isAndroid) {
+                            y *= View.of(context).devicePixelRatio;
+                          }
+                          if (webViewController != null) {
+                            webViewController!.scrollTo(0, y.ceil());
+                          }
                         },
+                        child: ListView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: 1,
+                          itemBuilder: (c, i) {
+                            return SizedBox(
+                              //width: 500,
+                              //height:718.5,
+                              //height:1252,
+                              height: heightWebview,
+                              child: WebViewWidget(controller: webViewController,),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
-                );
+                    ],
+                  );
+                },
+              ),
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                //webViewController.reload();
+                setState(() {
+                  isWeb = !isWeb;
+                });
               },
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              //webViewController.reload();
-              setState(() {
-                isWeb = !isWeb;
-              });
-            },
-          ),
         ),
-      ),
     );
   }
 }

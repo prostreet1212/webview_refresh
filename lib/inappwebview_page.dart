@@ -19,6 +19,7 @@ class _InappwebviewPageState extends State<InappwebviewPage>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   late InAppWebViewController? _inAppWebViewController = null;
   InAppWebViewController? get inAppWebViewController => _inAppWebViewController;
+  final GlobalKey webViewKey = GlobalKey();
   //set inAppWebViewController1(InAppWebViewController c) => _inAppWebViewController = c;
 
 
@@ -47,13 +48,14 @@ class _InappwebviewPageState extends State<InappwebviewPage>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       print('app resumed');
-
+      //await inAppWebViewController!.resume();
     } else if (state == AppLifecycleState.detached) {
       print('app detached');
     } else if (state == AppLifecycleState.hidden) {
       print('app hidden');
     } else if (state == AppLifecycleState.inactive) {
       print('app inactive');
+       //inAppWebViewController!.dispose(isKeepAlive: true);
     } else if (state == AppLifecycleState.paused) {
       print('app paused');
       //await inAppWebViewController!.pause();
@@ -92,37 +94,42 @@ class _InappwebviewPageState extends State<InappwebviewPage>
                     inAppWebViewController!.scrollTo(x: 0, y: y.ceil());
                   }
                 },
-                child:InAppWebView(
-                  key: ValueKey(webViewKeyString),
+                child: InAppWebView(
+                  key: webViewKey,
                   // key: _webViewKey,
                   onPageCommitVisible: (c,uri){
-
                   },
                   onWebViewCreated: (c) {
-                      _inAppWebViewController = c;
-                    inAppWebViewController!.loadUrl(
-                      urlRequest: URLRequest(
-                        // url: WebUri('https://kdrc.ru/novosti'),
-                        url: WebUri('https://kdrc.ru/novosti'),
-                      ),
-                    );
+                      _inAppWebViewController = c;;
                     inAppWebViewController!.addJavaScriptHandler(handlerName: 'onContentHeightChanged', callback:  (args) {
                       final height = args[0] as int;
                       print('Высота контента: $height');
                       // Можно обновить UI
                     },);
                   },
-                  /* initialUrlRequest: URLRequest(
+                   initialUrlRequest: URLRequest(
                     url: WebUri('https://kdrc.ru/novosti'),
-                  ),*/
+                  ),
                   onDownloadStartRequest:(c,r){
 
                   },
-
                    initialSettings: InAppWebViewSettings(
                     useOnRenderProcessGone: true,
-                     rendererPriorityPolicy: RendererPriorityPolicy(rendererRequestedPriority: RendererPriority.RENDERER_PRIORITY_BOUND,waivedWhenNotVisible: false)
+                     suppressesIncrementalRendering:true,
+                     javaScriptCanOpenWindowsAutomatically: true,
+
+                       iframeAllow: "camera; microphone",
+                       iframeAllowFullscreen: true,
+                     mediaPlaybackRequiresUserGesture: false,
+                     allowsInlineMediaPlayback: true,
+
+                     //rendererPriorityPolicy: RendererPriorityPolicy(rendererRequestedPriority: RendererPriority.RENDERER_PRIORITY_IMPORTANT,waivedWhenNotVisible: true)
                   ),
+                  onPermissionRequest: (controller, request) async{
+                    return await PermissionResponse(
+                        resources: request.resources,
+                        action: PermissionResponseAction.GRANT);
+                  },
                   onLoadStop: (c, uri) {
                     inAppWebViewController!.evaluateJavascript(
                       source: '''     (function() {
